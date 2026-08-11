@@ -1,0 +1,10 @@
+venv/
+__pycache__/
+*.pyc
+data/config.json
+data/activities.json
+app.log
+app.pid
+.vscode/
+.idea/
+.DS_Store

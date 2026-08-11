@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Strava{% endblock %}
+{% block content %}
+
+{% if not authorized %}
+  <p>Nie jesteś jeszcze zalogowany przez Stravę.</p>
+  <a href="{{ url_for('authorize') }}">
+    <button class="strava-btn">Autoryzuj przez Stravę</button>
+  </a>
+{% else %}
+  <p>Zalogowano jako: <strong>{{ athlete.get('firstname', '') }} {{ athlete.get('lastname', '') }}</strong></p>
+
+  <button id="sync-btn">Synchronizuj ze Stravą</button>
+  <span id="sync-status"></span>
+
+  <h2>Aktywności ({{ activities|length }})</h2>
+  <table>
+    <thead>
+      <tr><th>Data</th><th>Nazwa</th><th>Typ</th><th>Dystans (km)</th></tr>
+    </thead>
+    <tbody>
+      {% for a in activities %}
+      <tr>
+        <td>{{ a.get('start_date', '')[:10] }}</td>
+        <td>{{ a.get('name', '') }}</td>
+        <td>{{ a.get('type', '') }}</td>
+        <td>{{ "%.2f"|format(a.get('distance', 0) / 1000) }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="4">Brak danych — kliknij "Synchronizuj ze Stravą".</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <script>
+    document.getElementById('sync-btn').addEventListener('click', async () => {
+      const status = document.getElementById('sync-status');
+      status.textContent = ' Synchronizuję...';
+      const res = await fetch('/sync', { method: 'POST' });
+      const data = await res.json();
+      status.textContent = ' ' + (data.message || data.error);
+      if (res.ok) setTimeout(() => window.location.reload(), 1000);
+    });
+  </script>
+{% endif %}
+
+{% endblock %}
