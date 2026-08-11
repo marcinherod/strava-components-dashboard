@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Komponenty — Strava Dashboard{% endblock %}
+{% block content %}
+
+<h2>Komponenty roweru</h2>
+
+<p>
+  Wejdź na stronę swojego sprzętu na Stravie (Ustawienia → Mój sprzęt),
+  zaznacz i skopiuj całą tabelę komponentów (wraz z nagłówkiem), a następnie wklej ją poniżej.
+</p>
+
+<form method="POST">
+  <label for="raw_text">Wklejona tabela ze Stravy</label>
+  <textarea id="raw_text" name="raw_text" rows="10"
+            placeholder="Typ	Marka	Model	Dodano	Usunięte	Dystans	Działanie
+Rama	Lapierre	Xelius SL 500 Carbon Disc	Od początku		13 789,1 km	Wycofaj | Usuń"></textarea>
+  <button type="submit">Wczytaj i zapisz</button>
+</form>
+
+<h2>Zapisane komponenty ({{ components|length }})</h2>
+
+{% if components %}
+<table>
+  <thead>
+    <tr><th>Typ</th><th>Marka</th><th>Model</th><th>Dodano</th><th>Usunięte</th><th>Dystans (km)</th></tr>
+  </thead>
+  <tbody>
+    {% for c in components %}
+    <tr>
+      <td>{{ c.type }}</td>
+      <td>{{ c.brand }}</td>
+      <td>{{ c.model }}</td>
+      <td>{{ c.added }}</td>
+      <td>{{ c.removed or '—' }}</td>
+      <td>{{ c.distance_km if c.distance_km is not none else '—' }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>Brak zapisanych komponentów — wklej tabelę powyżej.</p>
+{% endif %}
+
+{% endblock %}

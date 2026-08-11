@@ -13,14 +13,23 @@
   <button id="sync-btn">Synchronizuj ze Stravą</button>
   <span id="sync-status"></span>
 
-  <h2>Aktywności ({{ activities|length }})</h2>
+  <h2>Aktywności (<span id="visible-count">{{ activities|length }}</span> / {{ activities|length }})</h2>
+
+  <label for="type-filter">Filtruj po typie:</label>
+  <select id="type-filter">
+    <option value="all">Wszystkie</option>
+    {% for t in activities|map(attribute='type')|unique|sort %}
+    <option value="{{ t }}">{{ t }}</option>
+    {% endfor %}
+  </select>
+
   <table>
     <thead>
       <tr><th>Data</th><th>Nazwa</th><th>Typ</th><th>Dystans (km)</th></tr>
     </thead>
-    <tbody>
+    <tbody id="activities-body">
       {% for a in activities %}
-      <tr>
+      <tr data-type="{{ a.get('type', '') }}">
         <td>{{ a.get('start_date', '')[:10] }}</td>
         <td>{{ a.get('name', '') }}</td>
         <td>{{ a.get('type', '') }}</td>
@@ -31,6 +40,23 @@
       {% endfor %}
     </tbody>
   </table>
+
+  <script>
+    const typeFilter = document.getElementById('type-filter');
+    const rows = document.querySelectorAll('#activities-body tr[data-type]');
+    const visibleCount = document.getElementById('visible-count');
+
+    typeFilter.addEventListener('change', () => {
+      const selected = typeFilter.value;
+      let count = 0;
+      rows.forEach(row => {
+        const match = selected === 'all' || row.dataset.type === selected;
+        row.style.display = match ? '' : 'none';
+        if (match) count++;
+      });
+      visibleCount.textContent = count;
+    });
+  </script>
 
   <script>
     document.getElementById('sync-btn').addEventListener('click', async () => {

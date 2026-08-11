@@ -29,6 +29,16 @@ form {
   max-width: 400px;
 }
 
+textarea {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: monospace;
+  width: 100%;
+  max-width: 600px;
+}
+
 label {
   font-weight: 600;
   margin-top: 8px;
@@ -54,6 +64,15 @@ button, .strava-btn {
 
 button:hover, .strava-btn:hover {
   background: #e04402;
+}
+
+#type-filter {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+  margin-left: 8px;
+  margin-bottom: 10px;
 }
 
 table {

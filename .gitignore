@@ -3,6 +3,7 @@ __pycache__/
 *.pyc
 data/config.json
 data/activities.json
+data/components.json
 app.log
 app.pid
 .vscode/

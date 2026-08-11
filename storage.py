@@ -11,6 +11,7 @@ import os
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 CONFIG_FILE = os.path.join(DATA_DIR, "config.json")
 ACTIVITIES_FILE = os.path.join(DATA_DIR, "activities.json")
+COMPONENTS_FILE = os.path.join(DATA_DIR, "components.json")
 
 
 def _ensure_data_dir():
@@ -45,3 +46,17 @@ def save_activities(activities: list):
     _ensure_data_dir()
     with open(ACTIVITIES_FILE, "w", encoding="utf-8") as f:
         json.dump(activities, f, indent=2, ensure_ascii=False)
+
+
+def get_components() -> list:
+    _ensure_data_dir()
+    if not os.path.exists(COMPONENTS_FILE):
+        return []
+    with open(COMPONENTS_FILE, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def save_components(components: list):
+    _ensure_data_dir()
+    with open(COMPONENTS_FILE, "w", encoding="utf-8") as f:
+        json.dump(components, f, indent=2, ensure_ascii=False)

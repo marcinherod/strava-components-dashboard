@@ -11,6 +11,7 @@ import time
 
 import storage
 import strava_client
+import components_parser
 
 app = Flask(__name__)
 
@@ -82,6 +83,18 @@ def auth_callback():
     )
 
     return redirect(url_for("dashboard"))
+
+
+@app.route("/components", methods=["GET", "POST"])
+def components():
+    if request.method == "POST":
+        raw_text = request.form.get("raw_text", "")
+        parsed = components_parser.parse_components_text(raw_text)
+        storage.save_components(parsed)
+        return redirect(url_for("components"))
+
+    comps = storage.get_components()
+    return render_template("components.html", components=comps)
 
 
 @app.route("/sync", methods=["POST"])
