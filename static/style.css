@@ -66,6 +66,41 @@ button:hover, .strava-btn:hover {
   background: #e04402;
 }
 
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 20px;
+  border-bottom: 2px solid #eee;
+}
+
+.tab-btn {
+  background: none;
+  color: #555;
+  border: none;
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+  padding: 8px 20px;
+  margin-bottom: -2px;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  margin-top: 0;
+}
+
+.tab-btn.active {
+  color: #fc4c02;
+  border-bottom-color: #fc4c02;
+  background: none;
+}
+
+.tab-panel {
+  display: none;
+}
+
+.tab-panel.active {
+  display: block;
+}
+
 #type-filter {
   padding: 6px 10px;
   border: 1px solid #ccc;

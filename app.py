@@ -87,11 +87,12 @@ def auth_callback():
     return redirect(url_for("dashboard"))
 
 
-@app.route("/components", methods=["POST"])
+@app.route("/components", methods=["GET", "POST"])
 def components():
-    raw_text = request.form.get("raw_text", "")
-    parsed = components_parser.parse_components_text(raw_text)
-    storage.save_components(parsed)
+    if request.method == "POST":
+        raw_text = request.form.get("raw_text", "")
+        parsed = components_parser.parse_components_text(raw_text)
+        storage.save_components(parsed)
     return redirect(url_for("dashboard") + "#components")
 
 
