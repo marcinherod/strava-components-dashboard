@@ -1,9 +1,18 @@
-# Strava Dashboard — jeden proces Python
+# Strava Dashboard
 
-Cała aplikacja (backend + interfejs) w jednym procesie Flask. Konfiguracja
-(Client ID / Secret) odbywa się w przeglądarce, bez edytowania plików.
+A lightweight personal dashboard for your Strava activities and bike components.
+Built with Python (Flask) — one process, no separate frontend build step needed.
+All configuration (Client ID / Secret) is done in the browser UI.
 
-## 1. Instalacja
+## Features
+
+- OAuth2 login with Strava (no manual token editing)
+- Sync and browse your activity history with type filtering
+- Manage bike components by pasting from Strava's gear page
+- Data stored locally in JSON files (no database required)
+- Persistent config — survives restarts without re-login
+
+## Installation
 
 ```powershell
 cd strava-dashboard
@@ -12,67 +21,74 @@ venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-## 2. Uruchomienie
+## Running
 
-### Windows (PowerShell) — najprostszy sposób
+### Windows (PowerShell) — simplest way
 
 ```powershell
 venv\Scripts\activate
 python app.py
 ```
 
-Aplikacja działa dopóki terminal jest otwarty (Ctrl+C żeby zatrzymać).
+The app runs as long as the terminal is open. Press `Ctrl+C` to stop.
 
-### Uruchomienie w tle (Git Bash) — opcjonalnie
+### Background mode (Git Bash) — optional
 
-Jeśli chcesz, żeby aplikacja działała dalej po zamknięciu terminala,
-otwórz **Git Bash** w folderze projektu (prawy klik → "Git Bash Here") i użyj:
+If you want the app to keep running after closing the terminal,
+open **Git Bash** in the project folder (right-click → "Git Bash Here"):
 
 ```bash
-./start.sh   # uruchomienie w tle
-./stop.sh    # zatrzymanie
-tail -f app.log   # logi na bieżąco
+./start.sh     # start in background
+./stop.sh      # stop
+tail -f app.log  # live logs
 ```
 
-## 3. Konfiguracja w przeglądarce
+## Setup in the browser
 
-Otwórz **http://localhost:5050** — zostaniesz przekierowany do `/settings`.
+Open **http://localhost:5050** — you'll be redirected to `/settings`.
 
-1. Załóż własną aplikację na [strava.com/settings/api](https://www.strava.com/settings/api)
-   ("Authorization Callback Domain" ustaw na `localhost`)
-2. Wklej **Client ID** i **Client Secret** w formularzu, zapisz
-3. Kliknij **"Autoryzuj przez Stravę"**, zaloguj się i zatwierdź dostęp
-4. Na dashboardzie kliknij **"Synchronizuj ze Stravą"**, żeby pobrać aktywności
+1. Create your own app at [strava.com/settings/api](https://www.strava.com/settings/api)
+   (set "Authorization Callback Domain" to `localhost`)
+2. Paste your **Client ID** and **Client Secret** into the settings form and save
+3. Click **"Authorize with Strava"**, log in and approve access
+4. On the dashboard, click **"Sync with Strava"** to fetch your activities
 
-Kolejne synchronizacje pobierają tylko nowe aktywności (te już zapisane są pomijane).
+Subsequent syncs only fetch new activities — already saved ones are skipped.
 
-## Struktura projektu
+## Adding bike components
+
+Strava's public API does not expose component data, so this dashboard uses a
+copy-paste approach:
+
+1. Go to your gear page on Strava (Settings → My Gear)
+2. Select and copy the entire components table (including the header row)
+3. Paste it into the **Components** tab on the dashboard and click "Load & Save"
+
+The parser handles the Polish number format (`13 789,1 km`) automatically.
+
+## Project structure
 
 ```
 strava-dashboard/
-├── app.py              # routing Flask, logika stron
-├── storage.py          # zapis/odczyt danych w plikach JSON
-├── strava_client.py    # OAuth2 + zapytania do Strava API
+├── app.py                  # Flask routes and app logic
+├── storage.py              # Read/write local JSON data files
+├── strava_client.py        # OAuth2 + Strava API calls
+├── components_parser.py    # Parse pasted component tables
 ├── requirements.txt
-├── start.sh / stop.sh   # uruchamianie w tle (Git Bash)
+├── start.sh / stop.sh      # Background mode scripts (Git Bash)
 ├── templates/
 │   ├── base.html
-│   ├── settings.html
-│   └── dashboard.html
+│   ├── dashboard.html      # Activities + Components tabs
+│   └── settings.html
 ├── static/style.css
-└── data/                # tworzone automatycznie
-    ├── config.json      # Client ID/Secret + tokeny (NIE trafia do gita)
-    └── activities.json  # zapisane aktywności (NIE trafia do gita)
+└── data/                   # Created automatically, excluded from git
+    ├── config.json         # Client ID/Secret + tokens (never commit this)
+    ├── activities.json     # Synced activities
+    └── components.json     # Saved bike components
 ```
 
-## Uwaga o bezpieczeństwie
+## Security note
 
-`data/config.json` zawiera Twój Client Secret i tokeny dostępu — jest w `.gitignore`,
-więc nigdy nie trafi na GitHub. Nie udostępniaj tego pliku nikomu.
-
-## Co dalej (pomysły na rozbudowę)
-
-- Wykresy dystansu/tempa w czasie (np. Chart.js w dashboard.html)
-- Filtrowanie aktywności po typie (bieganie, rower, itd.)
-- Mapa tras (Strava zwraca zakodowaną polyline dla każdej aktywności)
-- Prawdziwa baza danych (SQLite) zamiast plików JSON — lepsza przy dużej historii
+`data/config.json` contains your Client Secret and access tokens.
+It is listed in `.gitignore` and will never be committed to git.
+Do not share this file or expose it publicly.

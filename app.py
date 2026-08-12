@@ -25,11 +25,13 @@ def dashboard():
 
     if not config.get("access_token"):
         # Skonfigurowane, ale jeszcze nie zalogowane przez Stravę
-        return render_template("dashboard.html", authorized=False, athlete=None, activities=[])
+        return render_template("dashboard.html", authorized=False, athlete=None, activities=[], components=[])
 
     activities = storage.get_activities()
+    components = storage.get_components()
     athlete = config.get("athlete", {})
-    return render_template("dashboard.html", authorized=True, athlete=athlete, activities=activities)
+    return render_template("dashboard.html", authorized=True, athlete=athlete,
+                            activities=activities, components=components)
 
 
 @app.route("/settings", methods=["GET", "POST"])
@@ -85,16 +87,12 @@ def auth_callback():
     return redirect(url_for("dashboard"))
 
 
-@app.route("/components", methods=["GET", "POST"])
+@app.route("/components", methods=["POST"])
 def components():
-    if request.method == "POST":
-        raw_text = request.form.get("raw_text", "")
-        parsed = components_parser.parse_components_text(raw_text)
-        storage.save_components(parsed)
-        return redirect(url_for("components"))
-
-    comps = storage.get_components()
-    return render_template("components.html", components=comps)
+    raw_text = request.form.get("raw_text", "")
+    parsed = components_parser.parse_components_text(raw_text)
+    storage.save_components(parsed)
+    return redirect(url_for("dashboard") + "#components")
 
 
 @app.route("/sync", methods=["POST"])
