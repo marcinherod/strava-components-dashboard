@@ -1,9 +1,9 @@
 """
-Strava Dashboard - jeden proces Flask, konfiguracja w przeglądarce.
+Strava Dashboard - single Flask process, browser-based configuration.
 
-Uruchomienie:
+Run with:
     python app.py
-Otwórz: http://localhost:5050
+Open: http://localhost:5050
 """
 
 from flask import Flask, render_template, request, redirect, url_for, jsonify
@@ -24,26 +24,26 @@ def dashboard():
         return redirect(url_for("settings"))
 
     if not config.get("access_token"):
-        # Skonfigurowane, ale jeszcze nie zalogowane przez Stravę
-        return render_template("dashboard.html", authorized=False, athlete=None, activities=[], components=[])
+        # Configured but not yet authorized with Strava
+        return render_template("dashboard.html", authorized=False, athlete=None, activities=[], components=[], components_grouped={}, bikes=[])
 
     activities = storage.get_activities()
     components = storage.get_components()
     bikes = config.get("bikes", [])
 
-    # Grupowanie komponentów po typie z sortowaniem:
-    # 1. Aktywne (bez daty usunięcia) — na górze, "Od początku" na końcu aktywnych
-    # 2. Wycofane (z datą usunięcia) — na dole
+    # Group components by type with sorting:
+    # 1. Active (no removal date) — on top, "Od początku" last among active
+    # 2. Retired (with removal date) — always at the bottom
     components_grouped = {}
     for c in components:
-        t = c.get("type", "Inne")
+        t = c.get("type", "Other")
         components_grouped.setdefault(t, []).append(c)
 
     def sort_key(c):
         removed = c.get("removed", "").strip()
         added = c.get("added", "").strip()
-        is_removed = 1 if removed else 0          # wycofane na dół
-        is_from_start = 1 if added == "Od początku" else 0  # "Od początku" na dół wśród aktywnych
+        is_removed = 1 if removed else 0
+        is_from_start = 1 if added == "Od początku" else 0
         return (is_removed, is_from_start, added)
 
     for t in components_grouped:
@@ -69,7 +69,7 @@ def settings():
 
 @app.route("/auth/authorize")
 def authorize():
-    """Przekierowuje użytkownika na stronę logowania Strava."""
+    """Redirects the user to the Strava login page."""
     config = storage.get_config()
     client_id = config.get("client_id")
 
@@ -83,15 +83,15 @@ def authorize():
 
 @app.route("/auth/callback")
 def auth_callback():
-    """Strava przekierowuje tu z powrotem po zalogowaniu, z ?code=... w URL."""
+    """Strava redirects here after login with ?code=... in the URL."""
     code = request.args.get("code")
     error = request.args.get("error")
 
     if error:
-        return f"Autoryzacja odrzucona: {error}", 400
+        return f"Authorization denied: {error}", 400
 
     if not code:
-        return "Brak kodu autoryzacyjnego w odpowiedzi Stravy.", 400
+        return "No authorization code in Strava's response.", 400
 
     config = storage.get_config()
     token_data = strava_client.exchange_code_for_token(
@@ -119,26 +119,26 @@ def components():
 
 @app.route("/sync/bikes", methods=["POST"])
 def sync_bikes():
-    """Pobiera listę rowerów ze Strava API i zapisuje w config."""
+    """Fetches the list of bikes from Strava API and saves to config."""
     config = storage.get_config()
     access_token = _get_valid_access_token(config)
 
     if not access_token:
-        return jsonify({"error": "Nie zalogowano"}), 401
+        return jsonify({"error": "Not logged in"}), 401
 
     bikes = strava_client.get_bikes(access_token)
     storage.update_config(bikes=bikes)
-    return jsonify({"message": f"Pobrano {len(bikes)} rower(ów).", "bikes": bikes})
+    return jsonify({"message": f"Fetched {len(bikes)} bike(s).", "bikes": bikes})
 
 
 @app.route("/sync", methods=["POST"])
 def sync():
-    """Pobiera aktywności ze Stravy i zapisuje lokalnie."""
+    """Fetches activities from Strava and saves them locally."""
     config = storage.get_config()
     access_token = _get_valid_access_token(config)
 
     if not access_token:
-        return jsonify({"error": "Nie zalogowano"}), 401
+        return jsonify({"error": "Not logged in"}), 401
 
     existing = storage.get_activities()
     existing_ids = {a["id"] for a in existing}
@@ -161,11 +161,11 @@ def sync():
     existing.sort(key=lambda a: a.get("start_date", ""), reverse=True)
     storage.save_activities(existing)
 
-    return jsonify({"message": f"Zsynchronizowano. Nowych aktywności: {new_count}", "total": len(existing)})
+    return jsonify({"message": f"Sync complete. New activities: {new_count}", "total": len(existing)})
 
 
 def _get_valid_access_token(config: dict) -> str | None:
-    """Zwraca ważny access_token, odświeżając go w razie potrzeby."""
+    """Returns a valid access token, refreshing it if expired."""
     if not config.get("access_token"):
         return None
 

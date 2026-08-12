@@ -3,29 +3,29 @@
 {% block content %}
 
 {% if not authorized %}
-  <p>Nie jesteś jeszcze zalogowany przez Stravę.</p>
+  <p>You are not yet authorized with Strava.</p>
   <a href="{{ url_for('authorize') }}">
-    <button class="strava-btn">Autoryzuj przez Stravę</button>
+    <button class="strava-btn">Authorize with Strava</button>
   </a>
 {% else %}
-  <p>Zalogowano jako: <strong>{{ athlete.get('firstname', '') }} {{ athlete.get('lastname', '') }}</strong></p>
+  <p>Logged in as: <strong>{{ athlete.get('firstname', '') }} {{ athlete.get('lastname', '') }}</strong></p>
 
   <div class="tabs">
-    <button class="tab-btn active" data-tab="activities">Aktywności</button>
-    <button class="tab-btn" data-tab="components">Komponenty</button>
+    <button class="tab-btn active" data-tab="activities">Activities</button>
+    <button class="tab-btn" data-tab="components">Components</button>
   </div>
 
-  <!-- ===================== ZAKŁADKA: AKTYWNOŚCI ===================== -->
+  <!-- ===================== TAB: ACTIVITIES ===================== -->
   <section id="tab-activities" class="tab-panel active">
 
-    <button id="sync-btn">Synchronizuj ze Stravą</button>
+    <button id="sync-btn">Sync with Strava</button>
     <span id="sync-status"></span>
 
-    <h2>Aktywności (<span id="visible-count">{{ activities|length }}</span> / {{ activities|length }})</h2>
+    <h2>Activities (<span id="visible-count">{{ activities|length }}</span> / {{ activities|length }})</h2>
 
-    <label for="type-filter">Filtruj po typie:</label>
+    <label for="type-filter">Filter by type:</label>
     <select id="type-filter">
-      <option value="all">Wszystkie</option>
+      <option value="all">All</option>
       {% for t in activities|map(attribute='type')|unique|sort %}
       <option value="{{ t }}">{{ t }}</option>
       {% endfor %}
@@ -33,7 +33,7 @@
 
     <table>
       <thead>
-        <tr><th>Data</th><th>Nazwa</th><th>Typ</th><th>Dystans (km)</th></tr>
+        <tr><th>Date</th><th>Name</th><th>Type</th><th>Distance (km)</th></tr>
       </thead>
       <tbody id="activities-body">
         {% for a in activities %}
@@ -44,52 +44,52 @@
           <td>{{ "%.2f"|format(a.get('distance', 0) / 1000) }}</td>
         </tr>
         {% else %}
-        <tr><td colspan="4">Brak danych — kliknij "Synchronizuj ze Stravą".</td></tr>
+        <tr><td colspan="4">No data — click "Sync with Strava".</td></tr>
         {% endfor %}
       </tbody>
     </table>
   </section>
 
-  <!-- ===================== ZAKŁADKA: KOMPONENTY ===================== -->
+  <!-- ===================== TAB: COMPONENTS ===================== -->
   <section id="tab-components" class="tab-panel">
 
-    <h2>Komponenty roweru</h2>
+    <h2>Bike components</h2>
 
     {% if bikes %}
-    <label for="bike-select">Rower:</label>
+    <label for="bike-select">Bike:</label>
     <select id="bike-select">
-      <option value="all">Wszystkie rowery</option>
+      <option value="all">All bikes</option>
       {% for bike in bikes %}
       <option value="{{ bike.id }}">{{ bike.name }} ({{ "%.0f"|format(bike.distance / 1000) }} km)</option>
       {% endfor %}
     </select>
     {% else %}
     <p>
-      <button id="fetch-bikes-btn">Pobierz rowery ze Stravy</button>
+      <button id="fetch-bikes-btn">Fetch bikes from Strava</button>
       <span id="fetch-bikes-status"></span>
     </p>
     {% endif %}
 
     <p>
-      Wejdź na stronę swojego sprzętu na Stravie (Ustawienia → Mój sprzęt),
-      zaznacz i skopiuj całą tabelę komponentów (wraz z nagłówkiem), wklej ją poniżej.
+      Go to your gear page on Strava (Settings → My Gear),
+      select and copy the entire components table (including the header row), then paste it below.
     </p>
 
     <form method="POST" action="{{ url_for('components') }}">
-      <label for="raw_text">Wklejona tabela ze Stravy</label>
+      <label for="raw_text">Paste component table from Strava</label>
       <textarea id="raw_text" name="raw_text" rows="8"
-                placeholder="Typ&#9;Marka&#9;Model&#9;Dodano&#9;Usunięte&#9;Dystans&#9;Działanie"></textarea>
-      <button type="submit">Wczytaj i zapisz</button>
+                placeholder="Type&#9;Brand&#9;Model&#9;Added&#9;Removed&#9;Distance&#9;Action"></textarea>
+      <button type="submit">Load & Save</button>
     </form>
 
-    <h2>Zapisane komponenty ({{ components|length }})</h2>
+    <h2>Saved components ({{ components|length }})</h2>
 
     {% if components_grouped %}
       {% for type, items in components_grouped.items() %}
       <h3 class="component-group-header">{{ type }} <span class="component-count">({{ items|length }})</span></h3>
       <table class="component-table">
         <thead>
-          <tr><th>Marka</th><th>Model</th><th>Dodano</th><th>Usunięte</th><th>Dystans (km)</th></tr>
+          <tr><th>Brand</th><th>Model</th><th>Added</th><th>Removed</th><th>Distance (km)</th></tr>
         </thead>
         <tbody>
           {% for c in items %}
@@ -105,12 +105,12 @@
       </table>
       {% endfor %}
     {% else %}
-    <p>Brak zapisanych komponentów — wklej tabelę powyżej.</p>
+    <p>No components saved — paste the table above.</p>
     {% endif %}
   </section>
 
   <script>
-    // --- Przełączanie zakładek ---
+    // --- Tab switching ---
     const tabButtons = document.querySelectorAll('.tab-btn');
     const tabPanels = document.querySelectorAll('.tab-panel');
 
@@ -131,7 +131,30 @@
       activateTab(initialTab);
     }
 
-    // --- Filtrowanie aktywności po typie ---
+    // --- Fetch bikes from Strava ---
+    const fetchBikesBtn = document.getElementById('fetch-bikes-btn');
+    if (fetchBikesBtn) {
+      fetchBikesBtn.addEventListener('click', async () => {
+        const status = document.getElementById('fetch-bikes-status');
+        status.textContent = ' Fetching...';
+        const res = await fetch('/sync/bikes', { method: 'POST' });
+        const data = await res.json();
+        status.textContent = ' ' + (data.message || data.error);
+        if (res.ok) setTimeout(() => window.location.reload(), 800);
+      });
+    }
+
+    // --- Remember selected bike ---
+    const bikeSelect = document.getElementById('bike-select');
+    if (bikeSelect) {
+      const saved = localStorage.getItem('selected_bike');
+      if (saved) bikeSelect.value = saved;
+      bikeSelect.addEventListener('change', () => {
+        localStorage.setItem('selected_bike', bikeSelect.value);
+      });
+    }
+
+    // --- Activity type filter ---
     const typeFilter = document.getElementById('type-filter');
     const rows = document.querySelectorAll('#activities-body tr[data-type]');
     const visibleCount = document.getElementById('visible-count');
@@ -147,34 +170,10 @@
       visibleCount.textContent = count;
     });
 
-    // --- Pobieranie rowerów ze Stravy ---
-    const fetchBikesBtn = document.getElementById('fetch-bikes-btn');
-    if (fetchBikesBtn) {
-      fetchBikesBtn.addEventListener('click', async () => {
-        const status = document.getElementById('fetch-bikes-status');
-        status.textContent = ' Pobieranie...';
-        const res = await fetch('/sync/bikes', { method: 'POST' });
-        const data = await res.json();
-        status.textContent = ' ' + (data.message || data.error);
-        if (res.ok) setTimeout(() => window.location.reload(), 800);
-      });
-    }
-
-    // --- Zapamiętaj wybrany rower w localStorage ---
-    const bikeSelect = document.getElementById('bike-select');
-    if (bikeSelect) {
-      const saved = localStorage.getItem('selected_bike');
-      if (saved) bikeSelect.value = saved;
-
-      bikeSelect.addEventListener('change', () => {
-        localStorage.setItem('selected_bike', bikeSelect.value);
-      });
-    }
-
-    // --- Synchronizacja ze Stravą ---
+    // --- Sync with Strava ---
     document.getElementById('sync-btn').addEventListener('click', async () => {
       const status = document.getElementById('sync-status');
-      status.textContent = ' Synchronizuję...';
+      status.textContent = ' Syncing...';
       const res = await fetch('/sync', { method: 'POST' });
       const data = await res.json();
       status.textContent = ' ' + (data.message || data.error);

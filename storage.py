@@ -1,8 +1,9 @@
 """
-Prosty lokalny zapis danych w plikach JSON (bez bazy danych).
+Simple local data storage using JSON files (no database required).
 
-data/config.json      - client_id, client_secret, tokeny, dane zawodnika
-data/activities.json  - lista pobranych aktywności
+data/config.json      - client_id, client_secret, tokens, athlete info, bikes
+data/activities.json  - list of synced activities
+data/components.json  - saved bike components
 """
 
 import json

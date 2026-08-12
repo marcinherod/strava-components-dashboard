@@ -1,14 +1,14 @@
 {% extends "base.html" %}
-{% block title %}Ustawienia — Strava Dashboard{% endblock %}
+{% block title %}Settings — Strava Dashboard{% endblock %}
 {% block content %}
 
-<h2>Ustawienia</h2>
+<h2>Settings</h2>
 
 <p>
-  Załóż własną aplikację na
+  Create your own app at
   <a href="https://www.strava.com/settings/api" target="_blank">strava.com/settings/api</a>
-  (pole "Authorization Callback Domain" ustaw na <code>localhost</code>),
-  a następnie wklej poniżej swoje dane.
+  (set "Authorization Callback Domain" to <code>localhost</code>),
+  then paste your credentials below.
 </p>
 
 <form method="POST">
@@ -19,14 +19,14 @@
   <input type="password" id="client_secret" name="client_secret"
          value="{{ config.get('client_secret', '') }}" required>
 
-  <button type="submit">Zapisz</button>
+  <button type="submit">Save</button>
 </form>
 
 {% if config.get('client_id') and config.get('client_secret') %}
   <hr>
-  <p>Dane zapisane. Teraz autoryzuj dostęp:</p>
+  <p>Credentials saved. Now authorize access:</p>
   <a href="{{ url_for('authorize') }}">
-    <button class="strava-btn">Autoryzuj przez Stravę</button>
+    <button class="strava-btn">Authorize with Strava</button>
   </a>
 {% endif %}
 

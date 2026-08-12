@@ -1,54 +1,53 @@
 @echo off
 echo.
-echo  Strava Dashboard - instalacja
-echo  ==============================
+echo  Strava Dashboard - installation
+echo  =================================
 echo.
 
-:: Sprawdz czy Python jest dostepny
+:: Check if Python is available
 python --version >nul 2>&1
 if errorlevel 1 (
-    echo  BLAD: Python nie jest zainstalowany lub nie jest w PATH.
-    echo  Pobierz Python 3.10+ ze strony https://www.python.org/downloads/
-    echo  Pamietaj zaznaczyc "Add python.exe to PATH" podczas instalacji.
+    echo  ERROR: Python is not installed or not in PATH.
+    echo  Download Python 3.10+ from https://www.python.org/downloads/
+    echo  Make sure to check "Add python.exe to PATH" during installation.
     pause
     exit /b 1
 )
 
-echo  [1/3] Python znaleziony:
+echo  [1/3] Python found:
 python --version
 echo.
 
-:: Utworz venv jesli nie istnieje
+:: Create venv if it doesn't exist
 if exist venv (
-    echo  [2/3] Srodowisko wirtualne juz istnieje, pomijam tworzenie.
+    echo  [2/3] Virtual environment already exists, skipping.
 ) else (
-    echo  [2/3] Tworzenie srodowiska wirtualnego...
+    echo  [2/3] Creating virtual environment...
     python -m venv venv
     if errorlevel 1 (
-        echo  BLAD: Nie udalo sie utworzyc venv.
+        echo  ERROR: Failed to create virtual environment.
         pause
         exit /b 1
     )
 )
 echo.
 
-:: Zainstaluj zaleznosci
-echo  [3/3] Instalowanie zaleznosci (Flask, requests)...
-call venv\Scripts\activate.bat
-pip install -r requirements.txt --quiet
+:: Install dependencies
+echo  [3/3] Installing dependencies (Flask, requests)...
+venv\Scripts\pip.exe install -r requirements.txt --quiet
 if errorlevel 1 (
-    echo  BLAD: pip install nie powiodl sie.
+    echo  ERROR: pip install failed.
     pause
     exit /b 1
 )
 
 echo.
-echo  ==============================
-echo  Instalacja zakonczona!
+echo  =================================
+echo  Installation complete!
 echo.
-echo  Aby uruchomic aplikacje:
-echo    1. Uruchom start_app.bat  (lub wpisz: python app.py)
-echo    2. Otworz http://localhost:5050 w przegladarce
-echo  ==============================
+echo  To run the app:
+echo    1. Double-click start_app.bat
+echo    2. Open http://localhost:5050 in your browser
+echo  =================================
 echo.
 pause

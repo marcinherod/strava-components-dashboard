@@ -1,18 +1,17 @@
 @echo off
 echo.
-echo  Strava Dashboard - uruchamianie...
+echo  Strava Dashboard - starting...
 echo.
 
 if not exist venv (
-    echo  BLAD: Nie znaleziono srodowiska wirtualnego.
-    echo  Uruchom najpierw install.bat
+    echo  ERROR: Virtual environment not found.
+    echo  Please run install.bat first.
     pause
     exit /b 1
 )
 
-call venv\Scripts\activate.bat
-echo  Serwer dziala na http://localhost:5050
-echo  Nacisnij Ctrl+C zeby zatrzymac.
+echo  Server running at http://localhost:5050
+echo  Press Ctrl+C to stop.
 echo.
-python app.py
+venv\Scripts\python.exe app.py
 pause
