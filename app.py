@@ -29,9 +29,30 @@ def dashboard():
 
     activities = storage.get_activities()
     components = storage.get_components()
+    bikes = config.get("bikes", [])
+
+    # Grupowanie komponentów po typie z sortowaniem:
+    # 1. Aktywne (bez daty usunięcia) — na górze, "Od początku" na końcu aktywnych
+    # 2. Wycofane (z datą usunięcia) — na dole
+    components_grouped = {}
+    for c in components:
+        t = c.get("type", "Inne")
+        components_grouped.setdefault(t, []).append(c)
+
+    def sort_key(c):
+        removed = c.get("removed", "").strip()
+        added = c.get("added", "").strip()
+        is_removed = 1 if removed else 0          # wycofane na dół
+        is_from_start = 1 if added == "Od początku" else 0  # "Od początku" na dół wśród aktywnych
+        return (is_removed, is_from_start, added)
+
+    for t in components_grouped:
+        components_grouped[t].sort(key=sort_key)
+
     athlete = config.get("athlete", {})
     return render_template("dashboard.html", authorized=True, athlete=athlete,
-                            activities=activities, components=components)
+                            activities=activities, components=components,
+                            components_grouped=components_grouped, bikes=bikes)
 
 
 @app.route("/settings", methods=["GET", "POST"])
@@ -94,6 +115,20 @@ def components():
         parsed = components_parser.parse_components_text(raw_text)
         storage.save_components(parsed)
     return redirect(url_for("dashboard") + "#components")
+
+
+@app.route("/sync/bikes", methods=["POST"])
+def sync_bikes():
+    """Pobiera listę rowerów ze Strava API i zapisuje w config."""
+    config = storage.get_config()
+    access_token = _get_valid_access_token(config)
+
+    if not access_token:
+        return jsonify({"error": "Nie zalogowano"}), 401
+
+    bikes = strava_client.get_bikes(access_token)
+    storage.update_config(bikes=bikes)
+    return jsonify({"message": f"Pobrano {len(bikes)} rower(ów).", "bikes": bikes})
 
 
 @app.route("/sync", methods=["POST"])

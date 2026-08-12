@@ -9,10 +9,18 @@ All configuration (Client ID / Secret) is done in the browser UI.
 - OAuth2 login with Strava (no manual token editing)
 - Sync and browse your activity history with type filtering
 - Manage bike components by pasting from Strava's gear page
+- Select and filter by bike from your Strava garage
 - Data stored locally in JSON files (no database required)
 - Persistent config — survives restarts without re-login
 
 ## Installation
+
+### Option A — Windows one-click (recommended)
+
+Double-click **`install.bat`** in the project folder.
+It will check for Python, create a virtual environment, and install all dependencies automatically.
+
+### Option B — Manual (PowerShell)
 
 ```powershell
 cd strava-dashboard
@@ -23,16 +31,18 @@ pip install -r requirements.txt
 
 ## Running
 
-### Windows (PowerShell) — simplest way
+### Option A — Windows one-click
+
+Double-click **`start_app.bat`**. Press `Ctrl+C` to stop.
+
+### Option B — Manual (PowerShell)
 
 ```powershell
 venv\Scripts\activate
 python app.py
 ```
 
-The app runs as long as the terminal is open. Press `Ctrl+C` to stop.
-
-### Background mode (Git Bash) — optional
+### Option C — Background mode (Git Bash)
 
 If you want the app to keep running after closing the terminal,
 open **Git Bash** in the project folder (right-click → "Git Bash Here"):
@@ -52,6 +62,7 @@ Open **http://localhost:5050** — you'll be redirected to `/settings`.
 2. Paste your **Client ID** and **Client Secret** into the settings form and save
 3. Click **"Authorize with Strava"**, log in and approve access
 4. On the dashboard, click **"Sync with Strava"** to fetch your activities
+5. In the **Components** tab, click **"Fetch bikes from Strava"** to load your garage
 
 Subsequent syncs only fetch new activities — already saved ones are skipped.
 
@@ -65,6 +76,7 @@ copy-paste approach:
 3. Paste it into the **Components** tab on the dashboard and click "Load & Save"
 
 The parser handles the Polish number format (`13 789,1 km`) automatically.
+Components are grouped by type, with active ones on top and retired ones at the bottom.
 
 ## Project structure
 
@@ -75,6 +87,8 @@ strava-dashboard/
 ├── strava_client.py        # OAuth2 + Strava API calls
 ├── components_parser.py    # Parse pasted component tables
 ├── requirements.txt
+├── install.bat             # Windows one-click installer
+├── start_app.bat           # Windows one-click launcher
 ├── start.sh / stop.sh      # Background mode scripts (Git Bash)
 ├── templates/
 │   ├── base.html

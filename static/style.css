@@ -110,6 +110,34 @@ button:hover, .strava-btn:hover {
   margin-bottom: 10px;
 }
 
+.component-group-header {
+  margin-top: 16px;
+  margin-bottom: 2px;
+  color: #fc4c02;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid #fc4c02;
+  padding-bottom: 2px;
+}
+
+.component-count {
+  color: #999;
+  font-weight: normal;
+  font-size: 12px;
+  text-transform: none;
+}
+
+.component-table {
+  margin-bottom: 2px;
+}
+
+.component-table td,
+.component-table th {
+  padding: 4px 8px;
+  font-size: 13px;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;

@@ -55,6 +55,21 @@
 
     <h2>Komponenty roweru</h2>
 
+    {% if bikes %}
+    <label for="bike-select">Rower:</label>
+    <select id="bike-select">
+      <option value="all">Wszystkie rowery</option>
+      {% for bike in bikes %}
+      <option value="{{ bike.id }}">{{ bike.name }} ({{ "%.0f"|format(bike.distance / 1000) }} km)</option>
+      {% endfor %}
+    </select>
+    {% else %}
+    <p>
+      <button id="fetch-bikes-btn">Pobierz rowery ze Stravy</button>
+      <span id="fetch-bikes-status"></span>
+    </p>
+    {% endif %}
+
     <p>
       Wejdź na stronę swojego sprzętu na Stravie (Ustawienia → Mój sprzęt),
       zaznacz i skopiuj całą tabelę komponentów (wraz z nagłówkiem), wklej ją poniżej.
@@ -69,24 +84,26 @@
 
     <h2>Zapisane komponenty ({{ components|length }})</h2>
 
-    {% if components %}
-    <table>
-      <thead>
-        <tr><th>Typ</th><th>Marka</th><th>Model</th><th>Dodano</th><th>Usunięte</th><th>Dystans (km)</th></tr>
-      </thead>
-      <tbody>
-        {% for c in components %}
-        <tr>
-          <td>{{ c.type }}</td>
-          <td>{{ c.brand }}</td>
-          <td>{{ c.model }}</td>
-          <td>{{ c.added }}</td>
-          <td>{{ c.removed or '—' }}</td>
-          <td>{{ c.distance_km if c.distance_km is not none else '—' }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    {% if components_grouped %}
+      {% for type, items in components_grouped.items() %}
+      <h3 class="component-group-header">{{ type }} <span class="component-count">({{ items|length }})</span></h3>
+      <table class="component-table">
+        <thead>
+          <tr><th>Marka</th><th>Model</th><th>Dodano</th><th>Usunięte</th><th>Dystans (km)</th></tr>
+        </thead>
+        <tbody>
+          {% for c in items %}
+          <tr>
+            <td>{{ c.brand }}</td>
+            <td>{{ c.model }}</td>
+            <td>{{ c.added }}</td>
+            <td>{{ c.removed or '—' }}</td>
+            <td>{{ c.distance_km if c.distance_km is not none else '—' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% endfor %}
     {% else %}
     <p>Brak zapisanych komponentów — wklej tabelę powyżej.</p>
     {% endif %}
@@ -129,6 +146,30 @@
       });
       visibleCount.textContent = count;
     });
+
+    // --- Pobieranie rowerów ze Stravy ---
+    const fetchBikesBtn = document.getElementById('fetch-bikes-btn');
+    if (fetchBikesBtn) {
+      fetchBikesBtn.addEventListener('click', async () => {
+        const status = document.getElementById('fetch-bikes-status');
+        status.textContent = ' Pobieranie...';
+        const res = await fetch('/sync/bikes', { method: 'POST' });
+        const data = await res.json();
+        status.textContent = ' ' + (data.message || data.error);
+        if (res.ok) setTimeout(() => window.location.reload(), 800);
+      });
+    }
+
+    // --- Zapamiętaj wybrany rower w localStorage ---
+    const bikeSelect = document.getElementById('bike-select');
+    if (bikeSelect) {
+      const saved = localStorage.getItem('selected_bike');
+      if (saved) bikeSelect.value = saved;
+
+      bikeSelect.addEventListener('change', () => {
+        localStorage.setItem('selected_bike', bikeSelect.value);
+      });
+    }
 
     // --- Synchronizacja ze Stravą ---
     document.getElementById('sync-btn').addEventListener('click', async () => {

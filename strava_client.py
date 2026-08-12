@@ -53,3 +53,14 @@ def get_activities(access_token: str, page: int = 1, per_page: int = 100) -> lis
     )
     response.raise_for_status()
     return response.json()
+
+
+def get_bikes(access_token: str) -> list:
+    """Pobiera listę rowerów zalogowanego zawodnika."""
+    response = requests.get(
+        f"{API_BASE}/athlete",
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    response.raise_for_status()
+    data = response.json()
+    return data.get("bikes", [])
