@@ -18,12 +18,13 @@ All configuration (Client ID / Secret) is done in the browser UI.
 ## Features
 
 - OAuth2 login with Strava (no manual token editing)
-- Sync and browse your activity history with type filtering
-- Average speed chart with type and time period filters
+- Sync and browse your activity history with type and page size filters
+- Chart showing days between activities, colored by gap length, filterable by type and time period
 - Manage bike components by pasting from Strava's gear page
 - Auto-detects Polish and English Strava UI format when pasting components
 - Components grouped by type, active on top, retired at the bottom
 - Select bike from your Strava garage
+- Activity names link directly to Strava
 - Data stored locally in JSON files (no database required)
 - Persistent config — survives restarts without re-login
 

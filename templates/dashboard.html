@@ -93,7 +93,7 @@
     <!-- Chart section -->
     <div class="chart-container">
       <div class="chart-toolbar">
-        <span class="chart-title">Avg speed over time</span>
+        <span class="chart-title">Days between activities</span>
         <div class="chart-controls">
           <select id="chart-type-filter">
             <option value="Ride" {% if 'Ride' in activities|map(attribute='type')|list %}selected{% endif %}>Ride</option>
@@ -110,7 +110,7 @@
           </select>
         </div>
       </div>
-      <canvas id="speedChart" height="80"></canvas>
+      <canvas id="gapChart" height="80"></canvas>
     </div>
 
     <div class="activities-toolbar">
@@ -173,25 +173,31 @@
     // All activities as JSON for chart use
     const ALL_ACTIVITIES = {{ activities | tojson }};
 
-    // --- Chart: avg speed over time ---
-    const ctx = document.getElementById('speedChart').getContext('2d');
-    let speedChart = null;
+    // --- Chart: days between activities ---
+    const ctx = document.getElementById('gapChart').getContext('2d');
+    let gapChart = null;
 
     function buildChartData(typeFilter, days) {
       const now = new Date();
       const cutoff = days > 0 ? new Date(now - days * 86400000) : new Date(0);
 
       const filtered = ALL_ACTIVITIES.filter(a => {
-        if (!a.average_speed || a.average_speed <= 0) return false;
         if (typeFilter !== 'all' && a.type !== typeFilter) return false;
-        const date = new Date(a.start_date);
-        return date >= cutoff;
+        return new Date(a.start_date) >= cutoff;
       }).sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
 
-      return {
-        labels: filtered.map(a => a.start_date.slice(0, 10)),
-        data: filtered.map(a => (a.average_speed * 3.6).toFixed(2)), // m/s -> km/h
-      };
+      const labels = [];
+      const data = [];
+
+      for (let i = 1; i < filtered.length; i++) {
+        const prev = new Date(filtered[i - 1].start_date);
+        const curr = new Date(filtered[i].start_date);
+        const gap = Math.round((curr - prev) / 86400000);
+        labels.push(filtered[i].start_date.slice(0, 10));
+        data.push(gap);
+      }
+
+      return { labels, data };
     }
 
     function renderChart() {
@@ -199,22 +205,25 @@
       const days = parseInt(document.getElementById('chart-period').value);
       const { labels, data } = buildChartData(typeFilter, days);
 
-      if (speedChart) speedChart.destroy();
+      if (gapChart) gapChart.destroy();
 
-      speedChart = new Chart(ctx, {
-        type: 'line',
+      // Color bars: green <= 2 days, orange <= 5, red > 5
+      const colors = data.map(d =>
+        d <= 2 ? 'rgba(52, 168, 83, 0.7)' :
+        d <= 5 ? 'rgba(252, 76, 2, 0.7)' :
+                 'rgba(180, 0, 0, 0.8)'
+      );
+
+      gapChart = new Chart(ctx, {
+        type: 'bar',
         data: {
           labels,
           datasets: [{
-            label: 'Avg speed (km/h)',
+            label: 'Days since last activity',
             data,
-            borderColor: '#fc4c02',
-            backgroundColor: 'rgba(252, 76, 2, 0.08)',
-            borderWidth: 2,
-            pointRadius: 3,
-            pointHoverRadius: 5,
-            fill: true,
-            tension: 0.3,
+            backgroundColor: colors,
+            borderWidth: 0,
+            borderRadius: 2,
           }]
         },
         options: {
@@ -224,7 +233,7 @@
             tooltip: {
               callbacks: {
                 title: ctx => ctx[0].label,
-                label: ctx => `${ctx.parsed.y} km/h`,
+                label: ctx => `${ctx.parsed.y} day${ctx.parsed.y !== 1 ? 's' : ''} since last`,
               }
             }
           },
@@ -234,8 +243,9 @@
               grid: { display: false },
             },
             y: {
-              ticks: { font: { size: 11 } },
-              title: { display: true, text: 'km/h', font: { size: 11 } },
+              beginAtZero: true,
+              ticks: { font: { size: 11 }, stepSize: 1 },
+              title: { display: true, text: 'days', font: { size: 11 } },
             }
           }
         }
