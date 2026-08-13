@@ -290,6 +290,15 @@ th {
   text-decoration: underline;
 }
 
+.table-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: #666;
+}
+
 .empty-state {
   color: #888;
   font-size: 13px;

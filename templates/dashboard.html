@@ -122,7 +122,7 @@
           <option value="{{ t }}">{{ t }}</option>
           {% endfor %}
         </select>
-        <span class="activity-count">Showing <span id="visible-count">{{ activities|length }}</span> / {{ activities|length }}</span>
+        <span class="activity-count">Showing <span id="visible-count">0</span> / {{ activities|length }}</span>
       </div>
       <div class="toolbar-right">
         <button id="sync-btn">Sync with Strava</button>
@@ -153,6 +153,19 @@
         {% endfor %}
       </tbody>
     </table>
+
+    <div class="table-footer">
+      <label for="page-size">Show:</label>
+      <select id="page-size">
+        <option value="50" selected>50</option>
+        <option value="100">100</option>
+        <option value="200">200</option>
+        <option value="500">500</option>
+        <option value="1000">1000</option>
+        <option value="99999">Max</option>
+      </select>
+      <span class="activity-count">entries</span>
+    </div>
   </section>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -285,23 +298,33 @@
       });
     }
 
-    // --- Activity type filter ---
+    // --- Activity type filter + page size ---
     const typeFilter = document.getElementById('type-filter');
-    const rows = document.querySelectorAll('#activities-body tr[data-type]');
+    const pageSize = document.getElementById('page-size');
+    const allRows = Array.from(document.querySelectorAll('#activities-body tr[data-type]'));
     const visibleCount = document.getElementById('visible-count');
 
-    if (typeFilter) {
-      typeFilter.addEventListener('change', () => {
-        const selected = typeFilter.value;
-        let count = 0;
-        rows.forEach(row => {
-          const match = selected === 'all' || row.dataset.type === selected;
-          row.style.display = match ? '' : 'none';
-          if (match) count++;
-        });
-        visibleCount.textContent = count;
+    function applyFilters() {
+      const selectedType = typeFilter.value;
+      const limit = parseInt(pageSize.value);
+      let shown = 0;
+
+      allRows.forEach(row => {
+        const matchType = selectedType === 'all' || row.dataset.type === selectedType;
+        if (matchType && shown < limit) {
+          row.style.display = '';
+          shown++;
+        } else {
+          row.style.display = 'none';
+        }
       });
+
+      visibleCount.textContent = shown;
     }
+
+    if (typeFilter) typeFilter.addEventListener('change', applyFilters);
+    if (pageSize) pageSize.addEventListener('change', applyFilters);
+    applyFilters(); // apply on load (default 50)
 
     // --- Sync with Strava ---
     document.getElementById('sync-btn').addEventListener('click', async () => {
