@@ -102,6 +102,12 @@
             {% endfor %}
             <option value="all">All types</option>
           </select>
+          <select id="chart-bike-filter" {% if not bikes %}style="display:none"{% endif %}>
+            <option value="all">All bikes</option>
+            {% for bike in bikes %}
+            <option value="{{ bike.id }}">{{ bike.name }}</option>
+            {% endfor %}
+          </select>
           <select id="chart-period">
             <option value="90">Last 90 days</option>
             <option value="180" selected>Last 180 days</option>
@@ -177,12 +183,17 @@
     const ctx = document.getElementById('gapChart').getContext('2d');
     let gapChart = null;
 
-    function buildChartData(typeFilter, days) {
+    const chartTypeFilter = document.getElementById('chart-type-filter');
+    const chartBikeFilter = document.getElementById('chart-bike-filter');
+    const chartPeriod = document.getElementById('chart-period');
+
+    function buildChartData(typeFilter, bikeFilter, days) {
       const now = new Date();
       const cutoff = days > 0 ? new Date(now - days * 86400000) : new Date(0);
 
       const filtered = ALL_ACTIVITIES.filter(a => {
         if (typeFilter !== 'all' && a.type !== typeFilter) return false;
+        if (bikeFilter !== 'all' && a.gear_id !== bikeFilter) return false;
         return new Date(a.start_date) >= cutoff;
       }).sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
 
@@ -201,13 +212,20 @@
     }
 
     function renderChart() {
-      const typeFilter = document.getElementById('chart-type-filter').value;
-      const days = parseInt(document.getElementById('chart-period').value);
-      const { labels, data } = buildChartData(typeFilter, days);
+      const typeFilter = chartTypeFilter.value;
+      const bikeFilter = chartBikeFilter ? chartBikeFilter.value : 'all';
+      const days = parseInt(chartPeriod.value);
+
+      // Show bike dropdown only when type is Ride
+      if (chartBikeFilter) {
+        chartBikeFilter.style.display = (typeFilter === 'Ride') ? '' : 'none';
+        if (typeFilter !== 'Ride') chartBikeFilter.value = 'all';
+      }
+
+      const { labels, data } = buildChartData(typeFilter, bikeFilter, days);
 
       if (gapChart) gapChart.destroy();
 
-      // Color bars: green <= 2 days, orange <= 5, red > 5
       const colors = data.map(d =>
         d <= 2 ? 'rgba(52, 168, 83, 0.7)' :
         d <= 5 ? 'rgba(252, 76, 2, 0.7)' :
@@ -252,8 +270,9 @@
       });
     }
 
-    document.getElementById('chart-type-filter').addEventListener('change', renderChart);
-    document.getElementById('chart-period').addEventListener('change', renderChart);
+    chartTypeFilter.addEventListener('change', renderChart);
+    if (chartBikeFilter) chartBikeFilter.addEventListener('change', renderChart);
+    chartPeriod.addEventListener('change', renderChart);
     renderChart();
 
     // --- Tab switching ---
