@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Dashboard — Strava{% endblock %}
+{% block title %}Strava Components Dashboard{% endblock %}
 {% block content %}
 
 {% if not authorized %}
@@ -8,86 +8,64 @@
     <button class="strava-btn">Authorize with Strava</button>
   </a>
 {% else %}
-  <p>Logged in as: <strong>{{ athlete.get('firstname', '') }} {{ athlete.get('lastname', '') }}</strong></p>
+  <p class="athlete-info">Logged in as: <strong>{{ athlete.get('firstname', '') }} {{ athlete.get('lastname', '') }}</strong></p>
 
   <div class="tabs">
-    <button class="tab-btn active" data-tab="activities">Activities</button>
-    <button class="tab-btn" data-tab="components">Components</button>
+    <button class="tab-btn active" data-tab="components">Components</button>
+    <button class="tab-btn" data-tab="activities">Activities</button>
   </div>
 
-  <!-- ===================== TAB: ACTIVITIES ===================== -->
-  <section id="tab-activities" class="tab-panel active">
-
-    <button id="sync-btn">Sync with Strava</button>
-    <span id="sync-status"></span>
-
-    <h2>Activities (<span id="visible-count">{{ activities|length }}</span> / {{ activities|length }})</h2>
-
-    <label for="type-filter">Filter by type:</label>
-    <select id="type-filter">
-      <option value="all">All</option>
-      {% for t in activities|map(attribute='type')|unique|sort %}
-      <option value="{{ t }}">{{ t }}</option>
-      {% endfor %}
-    </select>
-
-    <table>
-      <thead>
-        <tr><th>Date</th><th>Name</th><th>Type</th><th>Distance (km)</th></tr>
-      </thead>
-      <tbody id="activities-body">
-        {% for a in activities %}
-        <tr data-type="{{ a.get('type', '') }}">
-          <td>{{ a.get('start_date', '')[:10] }}</td>
-          <td>{{ a.get('name', '') }}</td>
-          <td>{{ a.get('type', '') }}</td>
-          <td>{{ "%.2f"|format(a.get('distance', 0) / 1000) }}</td>
-        </tr>
-        {% else %}
-        <tr><td colspan="4">No data — click "Sync with Strava".</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </section>
-
   <!-- ===================== TAB: COMPONENTS ===================== -->
-  <section id="tab-components" class="tab-panel">
+  <section id="tab-components" class="tab-panel active">
 
-    <h2>Bike components</h2>
+    <div class="components-toolbar">
+      {% if bikes %}
+      <div class="toolbar-left">
+        <label for="bike-select">Bike:</label>
+        <select id="bike-select">
+          <option value="all">All bikes</option>
+          {% for bike in bikes %}
+          <option value="{{ bike.id }}">{{ bike.name }} ({{ "%.0f"|format(bike.distance / 1000) }} km)</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% else %}
+      <div class="toolbar-left">
+        <button id="fetch-bikes-btn">Fetch bikes from Strava</button>
+        <span id="fetch-bikes-status"></span>
+      </div>
+      {% endif %}
 
-    {% if bikes %}
-    <label for="bike-select">Bike:</label>
-    <select id="bike-select">
-      <option value="all">All bikes</option>
-      {% for bike in bikes %}
-      <option value="{{ bike.id }}">{{ bike.name }} ({{ "%.0f"|format(bike.distance / 1000) }} km)</option>
-      {% endfor %}
-    </select>
-    {% else %}
-    <p>
-      <button id="fetch-bikes-btn">Fetch bikes from Strava</button>
-      <span id="fetch-bikes-status"></span>
-    </p>
-    {% endif %}
+      <div class="toolbar-right">
+        <button id="toggle-import-btn" class="btn-secondary">{{ 'Update components' if components else 'Import components' }}</button>
+      </div>
+    </div>
 
-    <p>
-      Go to your gear page on Strava (Settings → My Gear),
-      select and copy the entire components table (including the header row), then paste it below.
-    </p>
-
-    <form method="POST" action="{{ url_for('components') }}">
-      <label for="raw_text">Paste component table from Strava</label>
-      <textarea id="raw_text" name="raw_text" rows="8"
-                placeholder="Type&#9;Brand&#9;Model&#9;Added&#9;Removed&#9;Distance&#9;Action"></textarea>
-      <button type="submit">Load & Save</button>
-    </form>
-
-    <h2>Saved components ({{ components|length }})</h2>
+    <!-- Import form — hidden by default if components already loaded -->
+    <div id="import-form-wrapper" class="{{ 'hidden' if components else '' }}">
+      <div class="import-instructions">
+        Go to Strava (Settings → My Gear), select and copy the entire components table
+        (including the header row), then paste it below.
+      </div>
+      <form method="POST" action="{{ url_for('components') }}">
+        <textarea id="raw_text" name="raw_text" rows="7"
+                  placeholder="Type&#9;Brand&#9;Model&#9;Added&#9;Removed&#9;Distance&#9;Action"></textarea>
+        <button type="submit">Load & Save</button>
+      </form>
+    </div>
 
     {% if components_grouped %}
+      <p class="components-summary">{{ components|length }} components loaded across {{ components_grouped|length }} type(s)</p>
       {% for type, items in components_grouped.items() %}
       <h3 class="component-group-header">{{ type }} <span class="component-count">({{ items|length }})</span></h3>
       <table class="component-table">
+        <colgroup>
+          <col class="col-brand">
+          <col class="col-model">
+          <col class="col-added">
+          <col class="col-removed">
+          <col class="col-distance">
+        </colgroup>
         <thead>
           <tr><th>Brand</th><th>Model</th><th>Added</th><th>Removed</th><th>Distance (km)</th></tr>
         </thead>
@@ -105,11 +83,156 @@
       </table>
       {% endfor %}
     {% else %}
-    <p>No components saved — paste the table above.</p>
+    <p class="empty-state">No components saved — use the import form above.</p>
     {% endif %}
   </section>
 
+  <!-- ===================== TAB: ACTIVITIES ===================== -->
+  <section id="tab-activities" class="tab-panel">
+
+    <!-- Chart section -->
+    <div class="chart-container">
+      <div class="chart-toolbar">
+        <span class="chart-title">Avg speed over time</span>
+        <div class="chart-controls">
+          <select id="chart-type-filter">
+            <option value="Ride" {% if 'Ride' in activities|map(attribute='type')|list %}selected{% endif %}>Ride</option>
+            {% for t in activities|map(attribute='type')|unique|sort %}
+            {% if t != 'Ride' %}<option value="{{ t }}">{{ t }}</option>{% endif %}
+            {% endfor %}
+            <option value="all">All types</option>
+          </select>
+          <select id="chart-period">
+            <option value="90">Last 90 days</option>
+            <option value="180" selected>Last 180 days</option>
+            <option value="365">Last 365 days</option>
+            <option value="0">All time</option>
+          </select>
+        </div>
+      </div>
+      <canvas id="speedChart" height="80"></canvas>
+    </div>
+
+    <div class="activities-toolbar">
+      <div class="toolbar-left">
+        <label for="type-filter">Filter by type:</label>
+        <select id="type-filter">
+          <option value="all">All</option>
+          {% for t in activities|map(attribute='type')|unique|sort %}
+          <option value="{{ t }}">{{ t }}</option>
+          {% endfor %}
+        </select>
+        <span class="activity-count">Showing <span id="visible-count">{{ activities|length }}</span> / {{ activities|length }}</span>
+      </div>
+      <div class="toolbar-right">
+        <button id="sync-btn">Sync with Strava</button>
+        <span id="sync-status"></span>
+      </div>
+    </div>
+
+    <table class="activities-table">
+      <colgroup>
+        <col class="col-date">
+        <col class="col-activity-name">
+        <col class="col-type">
+        <col class="col-dist">
+      </colgroup>
+      <thead>
+        <tr><th>Date</th><th>Name</th><th>Type</th><th>Distance (km)</th></tr>
+      </thead>
+      <tbody id="activities-body">
+        {% for a in activities %}
+        <tr data-type="{{ a.get('type', '') }}">
+          <td>{{ a.get('start_date', '')[:10] }}</td>
+          <td><a href="https://www.strava.com/activities/{{ a.get('id') }}" target="_blank" class="activity-link">{{ a.get('name', '') }}</a></td>
+          <td>{{ a.get('type', '') }}</td>
+          <td>{{ "%.2f"|format(a.get('distance', 0) / 1000) }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4">No data — click "Sync with Strava".</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script>
+    // All activities as JSON for chart use
+    const ALL_ACTIVITIES = {{ activities | tojson }};
+
+    // --- Chart: avg speed over time ---
+    const ctx = document.getElementById('speedChart').getContext('2d');
+    let speedChart = null;
+
+    function buildChartData(typeFilter, days) {
+      const now = new Date();
+      const cutoff = days > 0 ? new Date(now - days * 86400000) : new Date(0);
+
+      const filtered = ALL_ACTIVITIES.filter(a => {
+        if (!a.average_speed || a.average_speed <= 0) return false;
+        if (typeFilter !== 'all' && a.type !== typeFilter) return false;
+        const date = new Date(a.start_date);
+        return date >= cutoff;
+      }).sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
+
+      return {
+        labels: filtered.map(a => a.start_date.slice(0, 10)),
+        data: filtered.map(a => (a.average_speed * 3.6).toFixed(2)), // m/s -> km/h
+      };
+    }
+
+    function renderChart() {
+      const typeFilter = document.getElementById('chart-type-filter').value;
+      const days = parseInt(document.getElementById('chart-period').value);
+      const { labels, data } = buildChartData(typeFilter, days);
+
+      if (speedChart) speedChart.destroy();
+
+      speedChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Avg speed (km/h)',
+            data,
+            borderColor: '#fc4c02',
+            backgroundColor: 'rgba(252, 76, 2, 0.08)',
+            borderWidth: 2,
+            pointRadius: 3,
+            pointHoverRadius: 5,
+            fill: true,
+            tension: 0.3,
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                title: ctx => ctx[0].label,
+                label: ctx => `${ctx.parsed.y} km/h`,
+              }
+            }
+          },
+          scales: {
+            x: {
+              ticks: { maxTicksLimit: 12, font: { size: 11 } },
+              grid: { display: false },
+            },
+            y: {
+              ticks: { font: { size: 11 } },
+              title: { display: true, text: 'km/h', font: { size: 11 } },
+            }
+          }
+        }
+      });
+    }
+
+    document.getElementById('chart-type-filter').addEventListener('change', renderChart);
+    document.getElementById('chart-period').addEventListener('change', renderChart);
+    renderChart();
+
     // --- Tab switching ---
     const tabButtons = document.querySelectorAll('.tab-btn');
     const tabPanels = document.querySelectorAll('.tab-panel');
@@ -130,6 +253,14 @@
     if (initialTab === 'components' || initialTab === 'activities') {
       activateTab(initialTab);
     }
+
+    // --- Toggle import form ---
+    const toggleBtn = document.getElementById('toggle-import-btn');
+    const importWrapper = document.getElementById('import-form-wrapper');
+    toggleBtn.addEventListener('click', () => {
+      importWrapper.classList.toggle('hidden');
+      toggleBtn.textContent = importWrapper.classList.contains('hidden') ? 'Update components' : 'Cancel';
+    });
 
     // --- Fetch bikes from Strava ---
     const fetchBikesBtn = document.getElementById('fetch-bikes-btn');
@@ -159,16 +290,18 @@
     const rows = document.querySelectorAll('#activities-body tr[data-type]');
     const visibleCount = document.getElementById('visible-count');
 
-    typeFilter.addEventListener('change', () => {
-      const selected = typeFilter.value;
-      let count = 0;
-      rows.forEach(row => {
-        const match = selected === 'all' || row.dataset.type === selected;
-        row.style.display = match ? '' : 'none';
-        if (match) count++;
+    if (typeFilter) {
+      typeFilter.addEventListener('change', () => {
+        const selected = typeFilter.value;
+        let count = 0;
+        rows.forEach(row => {
+          const match = selected === 'all' || row.dataset.type === selected;
+          row.style.display = match ? '' : 'none';
+          if (match) count++;
+        });
+        visibleCount.textContent = count;
       });
-      visibleCount.textContent = count;
-    });
+    }
 
     // --- Sync with Strava ---
     document.getElementById('sync-btn').addEventListener('click', async () => {

@@ -1,27 +1,23 @@
 """
-Parses text copied from the Strava gear/components page.
+Parsowanie tekstu skopiowanego ze strony "Mój sprzęt" na Stravie.
 
-Expected format (tab-separated columns, as copied from an HTML table):
-Type    Brand   Model   Added   Removed Distance    Action
-Frame   Lapierre    Xelius SL 500 Carbon Disc   From start      13,789.1 km Retire | Delete
+Oczekiwany format (kolumny rozdzielone tabulatorem, jak przy kopiowaniu z tabeli HTML):
+Typ	Marka	Model	Dodano	Usunięte	Dystans	Działanie
+Rama	Lapierre	Xelius SL 500 Carbon Disc	Od początku		13 789,1 km	Wycofaj | Usuń
 """
 
 import re
 
-HEADER_KEYWORDS = {"typ", "marka", "model", "dodano", "type", "brand", "model", "added"}
+HEADER_KEYWORDS = {"typ", "marka", "model", "dodano"}
 
 
 def parse_distance(raw: str):
-    """Converts '13 789,1 km' (PL format) or '13,789.1 mi' to a float."""
+    """Zamienia '13 789,1 km' (format PL) na float 13789.1"""
     if not raw:
         return None
-    cleaned = raw.replace("\xa0", " ").replace("km", "").replace("mi", "").strip()
-    cleaned = re.sub(r"\s+", "", cleaned)   # remove thousands separator spaces
-    cleaned = cleaned.replace(",", ".")      # decimal comma -> dot
-    # handle cases like 13.789.1 (PL thousands dot + decimal dot)
-    parts = cleaned.split(".")
-    if len(parts) > 2:
-        cleaned = "".join(parts[:-1]) + "." + parts[-1]
+    cleaned = raw.replace("\xa0", " ").replace("km", "").strip()
+    cleaned = re.sub(r"\s+", "", cleaned)  # usuń spacje (separator tysięcy)
+    cleaned = cleaned.replace(",", ".")     # przecinek dziesiętny -> kropka
     try:
         return float(cleaned)
     except ValueError:
@@ -29,18 +25,18 @@ def parse_distance(raw: str):
 
 
 def parse_components_text(raw_text: str) -> list:
-    """Parses pasted component table text into a list of dicts."""
+    """Parsuje wklejony tekst tabeli na listę słowników z komponentami."""
     lines = [line for line in raw_text.strip().splitlines() if line.strip()]
     results = []
 
     for line in lines:
         parts = line.split("\t")
         if len(parts) < 6:
-            continue  # skip incomplete lines
+            continue  # linia niepełna, pomiń
 
         typ = parts[0].strip()
 
-        # skip header row
+        # pomiń wiersz nagłówka tabeli
         if typ.lower() in HEADER_KEYWORDS:
             continue
 

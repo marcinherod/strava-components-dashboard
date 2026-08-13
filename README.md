@@ -1,15 +1,29 @@
-# Strava Dashboard
+# Strava Components Dashboard
 
 A lightweight personal dashboard for your Strava activities and bike components.
 Built with Python (Flask) — one process, no separate frontend build step needed.
 All configuration (Client ID / Secret) is done in the browser UI.
 
+## Screenshots
+
+### Components
+![Components tab](docs/screenshots/components.png)
+
+### Activities
+![Activities tab](docs/screenshots/activities.png)
+
+### Settings
+![Settings page](docs/screenshots/settings.png)
+
 ## Features
 
 - OAuth2 login with Strava (no manual token editing)
 - Sync and browse your activity history with type filtering
+- Average speed chart with type and time period filters
 - Manage bike components by pasting from Strava's gear page
-- Select and filter by bike from your Strava garage
+- Auto-detects Polish and English Strava UI format when pasting components
+- Components grouped by type, active on top, retired at the bottom
+- Select bike from your Strava garage
 - Data stored locally in JSON files (no database required)
 - Persistent config — survives restarts without re-login
 
@@ -31,6 +45,11 @@ pip install -r requirements.txt
 
 ## Running
 
+| File | What it does |
+|---|---|
+| `install.bat` | One-time installation (run first) |
+| `start_app.bat` | Runs in a terminal window — stops when you close it |
+
 ### Option A — Windows one-click
 
 Double-click **`start_app.bat`**. Press `Ctrl+C` to stop.
@@ -44,8 +63,7 @@ python app.py
 
 ### Option C — Background mode (Git Bash)
 
-If you want the app to keep running after closing the terminal,
-open **Git Bash** in the project folder (right-click → "Git Bash Here"):
+Open **Git Bash** in the project folder (right-click → "Git Bash Here"):
 
 ```bash
 ./start.sh     # start in background
@@ -75,7 +93,7 @@ copy-paste approach:
 2. Select and copy the entire components table (including the header row)
 3. Paste it into the **Components** tab on the dashboard and click "Load & Save"
 
-The parser handles the Polish number format (`13 789,1 km`) automatically.
+Both Polish and English Strava UI formats are supported and auto-detected.
 Components are grouped by type, with active ones on top and retired ones at the bottom.
 
 ## Project structure
@@ -85,14 +103,15 @@ strava-dashboard/
 ├── app.py                  # Flask routes and app logic
 ├── storage.py              # Read/write local JSON data files
 ├── strava_client.py        # OAuth2 + Strava API calls
-├── components_parser.py    # Parse pasted component tables
+├── components_parser.py    # Parse pasted component tables (PL + EN)
 ├── requirements.txt
 ├── install.bat             # Windows one-click installer
 ├── start_app.bat           # Windows one-click launcher
 ├── start.sh / stop.sh      # Background mode scripts (Git Bash)
+├── docs/screenshots/       # Screenshots for README
 ├── templates/
 │   ├── base.html
-│   ├── dashboard.html      # Activities + Components tabs
+│   ├── dashboard.html      # Components + Activities tabs
 │   └── settings.html
 ├── static/style.css
 └── data/                   # Created automatically, excluded from git
