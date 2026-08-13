@@ -9,11 +9,17 @@ All configuration (Client ID / Secret) is done in the browser UI.
 ### Components
 ![Components tab](docs/screenshots/components.png)
 
+---
+
 ### Activities
 ![Activities tab](docs/screenshots/activities.png)
 
+---
+
 ### Settings
 ![Settings page](docs/screenshots/settings.png)
+
+---
 
 ## Features
 
