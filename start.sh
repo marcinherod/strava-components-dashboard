@@ -6,8 +6,7 @@ if [ -f app.pid ] && kill -0 "$(cat app.pid)" 2>/dev/null; then
   exit 0
 fi
 
-source venv/Scripts/activate
-nohup python app.py > app.log 2>&1 &
+nohup venv/Scripts/python.exe app.py > app.log 2>&1 &
 echo $! > app.pid
 sleep 1
 echo "Started at http://localhost:5050 (PID $(cat app.pid))"
